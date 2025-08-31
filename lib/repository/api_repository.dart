@@ -6,10 +6,31 @@ import 'package:http/http.dart' as http;
 
 class ApiRepository {
   static String baseUrl = "https://jsonplaceholder.typicode.com";
+
   Future<List<Post>> fetchPosts() async {
     try {
       final response = await http.get(
         Uri.parse("$baseUrl/posts"),
+        headers: {'Content-type': 'application/json; charset=UTF-8'},
+      );
+      if (response.statusCode == 200) {
+        List<dynamic> jsonList = jsonDecode(response.body);
+        final data = jsonList.map((e) => Post.fromMap(e)).toList();
+        return data;
+      } else {
+        debugPrint('error fetching posts');
+        return [];
+      }
+    } on Exception catch (e) {
+      debugPrint(e.toString());
+      return [];
+    }
+  }
+
+  Future<List<Post>> fetchPostsByBatch(int startPage, int limit) async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/posts?_start=$startPage&_limit=$limit"),
         headers: {'Content-type': 'application/json; charset=UTF-8'},
       );
       if (response.statusCode == 200) {

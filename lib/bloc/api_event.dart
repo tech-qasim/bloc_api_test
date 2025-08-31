@@ -14,3 +14,7 @@ class SearchPostEvent extends ApiEvent {
 
   SearchPostEvent({required this.searchQuery});
 }
+
+class GetPostListByBatchEvent extends ApiEvent {}
+
+class GetInitialPosts extends ApiEvent {}

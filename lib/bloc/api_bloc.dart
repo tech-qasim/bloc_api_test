@@ -16,6 +16,38 @@ class ApiBloc extends Bloc<ApiEvent, ApiState> {
       emit(state.copyWith(isLoading: false));
     });
 
+    on<GetInitialPosts>((event, emit) async {
+      final response = await apiRepo.fetchPostsByBatch(0, 20);
+      if (response.isNotEmpty) {
+        emit(state.copyWith(posts: [...state.posts, ...response]));
+      }
+    });
+
+    on<GetPostListByBatchEvent>((event, emit) async {
+      if (!state.hasMoreData || state.isFetchign) {
+        return;
+      }
+
+      emit(state.copyWith(isFetchign: true));
+
+      int limit = 10;
+      final response = await apiRepo.fetchPostsByBatch(
+        state.startPage + limit, //20 + 10 = 30
+        limit,
+      );
+      if (response.isNotEmpty) {
+        emit(
+          state.copyWith(
+            posts: [...state.posts, ...response],
+            startPage: state.startPage + limit, //0+20 = 20
+            isFetchign: false,
+          ),
+        );
+      } else {
+        emit(state.copyWith(hasMoreData: false, isFetchign: false));
+      }
+    });
+
     on<AddPostEvent>((event, emit) async {
       final response = await apiRepo.addPost({
         "title": event.title,

@@ -1,6 +1,5 @@
 import 'package:bloc_api_test/bloc/api_bloc.dart';
 import 'package:bloc_api_test/bloc/api_event.dart';
-import 'package:bloc_api_test/repository/api_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -15,18 +14,25 @@ class _ApiScreenState extends State<ApiScreen> {
   final titleController = TextEditingController();
   final bodyController = TextEditingController();
   final searchController = TextEditingController();
+  final scrollController = ScrollController();
   @override
   void initState() {
+    scrollController.addListener(() {
+      if (scrollController.position.pixels >=
+          scrollController.position.maxScrollExtent - 200) {
+        context.read<ApiBloc>().add(GetPostListByBatchEvent());
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ApiBloc>().add(GetPostListEvent());
+      context.read<ApiBloc>().add(GetInitialPosts());
     });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final posts = context.watch<ApiBloc>().state.filteredPosts;
-    final isLoading = context.watch<ApiBloc>().state.isLoading;
+    final posts = context.watch<ApiBloc>().state.posts;
+    final isLoading = context.watch<ApiBloc>().state.isFetchign;
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -83,17 +89,23 @@ class _ApiScreenState extends State<ApiScreen> {
             },
           ),
 
-          isLoading
-              ? Center(child: CircularProgressIndicator())
-              : Expanded(
-                  child: ListView.builder(
-                    itemCount: posts.length,
-                    itemBuilder: (context, index) {
-                      final post = posts[index];
-                      return ListTile(title: Text(post.title));
-                    },
-                  ),
-                ),
+          Expanded(
+            child: ListView.builder(
+              controller: scrollController,
+              itemCount: posts.length + (isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == posts.length) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                final post = posts[index];
+                return ListTile(
+                  leading: Text(post.id.toString()),
+                  title: Text(post.title),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
